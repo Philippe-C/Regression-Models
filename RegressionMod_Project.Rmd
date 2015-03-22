@@ -1,6 +1,6 @@
 ---
 title: "Regression Models Data Science Coursera R Project"
-author: "[Philippe-C](https://github.com/Philippe-C/Regression-Models) - 22 March 2015 (using Rmd and Knitr)"
+author: "[Philippe-C](https://github.com/Philippe-C/Regression-Models) (follow link) - 22 March 2015 (using Rmd and Knitr)"
 output: pdf_document
 ---
 \section*{\textbf{Executive summary:}}
