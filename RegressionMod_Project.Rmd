@@ -1,0 +1,88 @@
+---
+title: "Regression Models Data Science Coursera R Project"
+author: "[Philippe-C](https://github.com/Philippe-C/Regression-Models) - 22 March 2015 (using Rmd and Knitr)"
+output: pdf_document
+---
+\section*{\textbf{Executive summary:}}
+We have used the "mtcars" dataset from the 1974 "Motor Trend" US magazine to answer two questions:
+\begin{itemize}
+        \item {Is an automatic or manual transmission better for miles per gallon (MPG)?}
+        \item {How different is the MPG between automatic and manual transmissions?}
+\end{itemize}
+Based on a linear regression analysis, we show that there is a statistically significant difference between the mean MPG for automatic("am"=0) and manual transmission cars("am"=1). Manual transmissions allows a higher value of MPG compared to automatic transmission. This increase is approximately 7 MPG (+1.8 MPG when adjusted for other variables). The details of the complete analysis are presented below.
+\section*{\textbf{Exploratory Data analysis:}}
+\subsection*{A) Dataprocessing:}
+It requires loading the dataset and transforming certain 'numeric' variables as 'factors' (see R code below).
+```{r}
+mtcars$cyl  <- factor(mtcars$cyl)
+mtcars$vs   <- factor(mtcars$vs)
+mtcars$gear <- factor(mtcars$gear)
+mtcars$carb <- factor(mtcars$carb)
+mtcars$am   <- factor(mtcars$am,labels=c("Automatic","Manual"))
+```
+Looking at (\textbf{Appendix - Figure 1}), we see that the variables "cyl", "disp", "hp", "drat", "wt", "vs" and "am" have a strong correlation with "mpg".
+We are \textbf{mainly} interested in the effects of car transmission type on "mpg". Therefore, we look at the distribution of "mpg" for each level of "am" (Automatic or Manual) using a box plot (\textbf{Appendix - Figure 2}). This plot emphasizes that manual transmissions tend to have higher MPG.
+\subsection*{B) Statistical inference:}
+We have performed a t-test making the null hypothesis that the MPG of the automatic and manual transmissions come from the same distribution (assuming the transmissions data have a normal distribution).
+```{r}
+test<- t.test(mpg ~ am, data = mtcars)
+test$p.value
+test$estimate
+```
+Since the p-value (0.001374) is largely below 5%, we reject the null hypothesis. So, the automatic and manual transmissions MPG distributions are not the same. The difference in means is close to 7.24 MPG.
+\subsection*{C) Regression Analysis, analysis of variance and model residuals:}
+We have used different models. The first model simply includes all variables as predictors. In order to build a "best model" (i.e. select the significant predictors of "mpg""), we use the R 'step()' function which calls 'lm()' repeatedly to build multiple regression models and select the best variables from them using both forward selection and backward elimination (AIC algorithm).
+```{r, results='hide'}
+firstmodel <- lm(mpg ~ ., data = mtcars)
+bestmodel <- step(firstmodel, direction = "both") 
+```
+The "best model" shows that variables, "cyl", "wt" and "hp" are confounding variables and "am" the independent variable.
+```{r}
+summary(bestmodel)
+```
+Looking at the adjusted R-squared and p-value (<5%), we can conclude with statistical significance that 84% of the variability in "mpg" is explained by the "best model" predictors. Then, we compare the "best model" with a "base model" including only the variable "am".
+```{r}
+basemodel <- lm(mpg ~ am, data = mtcars)
+anova(basemodel, bestmodel)
+```
+The critical value being highly significant, we reject the null hypothesis, in other words the variables "cyl", "hp", and "wt" contribute to the precision of the model.
+Looking at the residuals plots (\textbf{Appendix - Figure 3}), we can verify the independence conditions since the points are randomly scattered in the residuals vs fitted plot. The QQ plot indicates that the residuals are (at least approximately) normally distributed. Furthermore, the constant variance hypothesis is respected (scale-location plot). Finally, the Residuals vs. Leverage plot shows that no outliers are present, as all values fall well within the 0.5 bands. So, we can consider that the classical assumptions of the theory of linear regression are verified.
+Moreover, we can proceed with some regression diagnostics using the 'hatvalues()' and 'dfbetas()' functions.
+```{r}
+leverage <- hatvalues(bestmodel)
+tail(sort(leverage),3)
+```
+```{r}
+influential <- dfbetas(bestmodel)
+tail(sort(influential[,6]),3)
+```
+As these results point out the same cars as in the residuals plots, they confirm that the analysis conducted in this project were correct. 
+\section*{\textbf{Conclusions:}}
+According to the "best model" results in section C (see also, \textit{Appendix - Figures 1 and 4}), we can say with statistical significance (p-values<5%) that:
+\begin{enumerate}
+        \item {Manual transmission cars performed better in our dataset (1.8 more miles per gallon adjusted for "hp"", "cyl" and "wt").}
+        \item {MPG are negatively related to weight (-2.5 for every 1000 lbs in "wt").} 
+        \item {MPG are negatively related to horse power (-0.32 for every increase of 10 in "hp").}        
+        \item {Cylinders impact negatively MPG (adjusted for "hp", "wt" and "am", when "cyl" increase from 4 to 6, MPG decrease by a factor of 3).} 
+\end{enumerate}
+\section*{\textbf{Appendix:}}
+\subsubsection*{Figure 1 - Pairs plot for the "mtcars" dataset}
+```{r, echo=FALSE}
+pairs(mpg ~ ., panel=panel.smooth, data = mtcars)
+```
+\subsubsection*{Figure 2 - Boxplot of MPG by transmission type}
+```{r, echo=FALSE}
+boxplot(mpg ~ am, data = mtcars, col = (c("yellow","green")), ylab = "Miles Per Gallon", xlab = "Transmission Type")
+```
+\subsubsection*{Figure 3 - "Best model" residuals plots}
+```{r, echo=FALSE}
+par(mfrow=c(2, 2))
+plot(bestmodel)
+```
+\subsubsection*{Figure 4 - Scatter Plot of MPG as a function of Weight}
+```{r, echo=FALSE}
+library(ggplot2)
+ggplot(mtcars, aes(x=wt, y=mpg, group=am, color=am, height=2, width=2)) + geom_point() +  
+scale_colour_discrete(labels=c("Automatic", "Manual")) + 
+xlab("Weight (lbs)") + ylab("MPG") + ggtitle("")
+```
