@@ -86,4 +86,3 @@ ggplot(mtcars, aes(x=wt, y=mpg, group=am, color=am, height=2, width=2)) + geom_p
 scale_colour_discrete(labels=c("Automatic", "Manual")) + 
 xlab("Weight (lbs)") + ylab("MPG") + ggtitle("")
 ```
-
